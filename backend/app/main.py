@@ -5,7 +5,32 @@ import logging
 
 # Import de Sudachi pour le test immédiat (nous le déplacerons plus tard)
 from sudachipy import tokenizer, dictionary
+from fastapi import FastAPI, HTTPException, Depends
+from sqlalchemy.orm import Session
+from .db.base import SessionLocal, engine
+from .db.init_db import init_models
+from .models.card import UserCard, CardContext
+from pydantic import BaseModel
+from datetime import datetime
 
+# Initialisation des tables au démarrage
+init_models()
+
+# Dépendance pour obtenir la session DB
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Schéma pour la sauvegarde d'un mot
+class CardCreate(BaseModel):
+    word_text: str
+    reading: str
+    lemma: str
+    definition: str
+    sentence_context: str  # La phrase extraite du texte
 # Initialisation des logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -72,3 +97,32 @@ def test_japanese_analysis(request: TextRequest):
     except Exception as e:
         logger.error(f"Erreur lors de l'analyse : {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/cards")
+def create_card(card_data: CardCreate, db: Session = Depends(get_db)):
+    """
+    Sauvegarde un mot et sa phrase de contexte associée.
+    """
+    # 1. Création de l'objet Carte
+    new_card = UserCard(
+        word_text=card_data.word_text,
+        reading=card_data.reading,
+        lemma=card_data.lemma,
+        definition=card_data.definition,
+        next_review_date=datetime.now()
+    )
+    
+    db.add(new_card)
+    db.flush() # Récupère l'ID de la carte avant le commit final
+    
+    # 2. Création du contexte associé
+    new_context = CardContext(
+        card_id=new_card.id,
+        sentence_text=card_data.sentence_context
+    )
+    
+    db.add(new_context)
+    db.commit()
+    db.refresh(new_card)
+    
+    return {"message": "Mot et contexte sauvegardés !", "card_id": new_card.id}
