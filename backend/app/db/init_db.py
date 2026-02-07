@@ -1,10 +1,11 @@
 from .base import Base, engine
+# IMPORT IMPORTANT :
 from ..models.card import UserCard, CardContext
+from ..models.dictionary import DictionaryEntry 
 
 def init_models():
-    # Cette commande crée toutes les tables définies dans nos modèles
     Base.metadata.create_all(bind=engine)
-    print("Base de données initialisée avec succès (Tables user_cards et card_contexts créées).")
+    print("Tables créées : user_cards, card_contexts, dictionary")
 
 if __name__ == "__main__":
     init_models()
