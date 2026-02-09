@@ -108,33 +108,8 @@ const Reader = ({ API_URL }) => {
 	  </div>
         </div>
 
-        {/* Colonne Droite : Détails et Contexte */}
-	  <div className="flex flex-col gap-2 mt-4">
-	  <button 
-	  onClick={saveWord}
-	  className="w-full bg-emerald-500 text-white py-2 rounded-lg font-bold hover:bg-emerald-600"
-	  >
-	  Apprendre (SRS)
-	  </button>
-	  
-	  <button 
-	  onClick={async () => {
-		  await axios.post(`${API_URL}/api/cards/mark-known`, {
-			  word_text: selectedWord.surface,
-			  reading: selectedWord.reading,
-			  lemma: selectedWord.dictionary_form,
-			  definition: selectedWord.definition,
-			  sentence_context: contextSentence
-		  });
-		  analyzeText(); // Rafraîchir les couleurs du texte
-	  }}
-	  className="w-full bg-slate-200 text-slate-700 py-2 rounded-lg font-medium hover:bg-slate-300"
-	  >
-	  Je connais déjà
-	  </button>
-	  </div>
-
-	  <div className="md:col-span-1">
+{/* Colonne Droite : Détails et Contexte */}
+        <div className="md:col-span-1">
           {selectedWord ? (
             <div className="bg-white p-6 rounded-2xl shadow-md border sticky top-6 space-y-4">
               <h2 className="text-4xl font-bold text-slate-800">{selectedWord.surface}</h2>
@@ -150,12 +125,30 @@ const Reader = ({ API_URL }) => {
                 </p>
               </div>
 
-              <button 
-                onClick={saveWord}
-                className="w-full mt-4 bg-emerald-500 text-white py-2 rounded-lg font-bold hover:bg-emerald-600 transition"
-              >
-                Sauvegarder pour révision
-              </button>
+              <div className="flex flex-col gap-2 mt-4">
+                <button 
+                  onClick={saveWord}
+                  className="w-full bg-emerald-500 text-white py-2 rounded-lg font-bold hover:bg-emerald-600 transition"
+                >
+                  Apprendre (SRS)
+                </button>
+                
+                <button 
+                  onClick={async () => {
+                    await axios.post(`${API_URL}/api/cards/mark-known`, {
+                      word_text: selectedWord.surface,
+                      reading: selectedWord.reading,
+                      lemma: selectedWord.dictionary_form,
+                      definition: selectedWord.definition,
+                      sentence_context: contextSentence
+                    });
+                    analyzeText(); 
+                  }}
+                  className="w-full bg-slate-200 text-slate-700 py-2 rounded-lg font-medium hover:bg-slate-300 transition"
+                >
+                  Je connais déjà
+                </button>
+              </div>
             </div>
           ) : (
             <div className="h-full border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center p-6 text-center text-slate-400 italic text-sm">
