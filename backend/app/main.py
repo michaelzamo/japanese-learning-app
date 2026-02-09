@@ -60,19 +60,32 @@ def test_japanese_analysis(request: TextRequest, db: Session = Depends(get_db)):
     try:
         tokens = tokenizer_obj.tokenize(request.text, mode)
         results = []
+
+        # Récupérer tous les lemmes déjà enregistrés par l'utilisateur pour comparer
+        # (Plus tard, on filtrera par user_id)
+        known_words = {card.lemma: card.status for card in db.query(UserCard).all()}
+
         for t in tokens:
             lemma = t.dictionary_form()
+
+            # Déterminer le statut
+            # 0: Nouveau (Bleu), 1: En apprentissage (Jaune), 2: Connu (Blanc/Transparent)
+            status = "new"
+            if lemma in known_words:
+                status = known_words[lemma] # sera 'learning' ou 'mastered'
+
             # Recherche de la définition
             dict_entry = db.query(DictionaryEntry).filter(
                 (DictionaryEntry.kanji == lemma) | (DictionaryEntry.reading == lemma)
             ).first()
-            
+
             results.append({
                 "surface": t.surface(),
                 "dictionary_form": lemma,
                 "reading": t.reading_form(),
                 "part_of_speech": t.part_of_speech(),
-                "definition": dict_entry.definitions if dict_entry else "No definition found"
+                "definition": dict_entry.definitions if dict_entry else "No definition found",
+                "status": status
             })
         return {"tokens": results}
     except Exception as e:
@@ -122,5 +135,21 @@ def update_card_srs(card_id: int, quality: str, db: Session = Depends(get_db)):
     db.commit()
     return {"next_review": next_date}
 
-
-
+@app.post("/api/cards/mark-known")
+def mark_word_known(card_data: CardCreate, db: Session = Depends(get_db)):
+    # On vérifie si la carte existe déjà
+    existing = db.query(UserCard).filter(UserCard.lemma == card_data.lemma).first()
+    if existing:
+        existing.status = "mastered"
+    else:
+        new_card = UserCard(
+            word_text=card_data.word_text,
+            reading=card_data.reading,
+            lemma=card_data.lemma,
+            definition=card_data.definition,
+            status="mastered",
+            next_review_date=datetime(2099, 1, 1) # Très loin dans le futur
+        )
+        db.add(new_card)
+    db.commit()
+    return {"message": "Mot marqué comme connu"}
