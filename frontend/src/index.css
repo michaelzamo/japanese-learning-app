@@ -1,8 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-body {
-  @apply bg-slate-50 text-slate-900;
+@theme {
+  --color-new: #dbeafe;       /* bg-blue-100 */
+  --color-new-border: #60a5fa; /* border-blue-400 */
+  --color-learning: #fef08a;   /* bg-yellow-100 */
+  --color-learning-border: #facc15; /* border-yellow-400 */
 }
 
+body {
+  background-color: #f8fafc; /* bg-slate-50 */
+  color: #0f172a;           /* text-slate-900 */
+}
